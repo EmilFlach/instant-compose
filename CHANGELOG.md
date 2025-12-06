@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
- 
+### Fixed
+- Fix a bug where gradle-wrapper.jar is not copied to the new app
+
+## [0.1.0] - 2025-12-6
+
+### Added 
 - Add the option to create compose apps for all targets using `composables init composeApp`
