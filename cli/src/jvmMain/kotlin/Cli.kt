@@ -141,17 +141,27 @@ fun cloneComposeApp(
     fun copyResource(resourcePath: String, targetFile: File) {
         val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
         if (inputStream != null) {
-            targetFile.parentFile.mkdirs()
+            targetFile.parentFile?.mkdirs()
+
+            // Handle gradle-wrapper.jarX -> gradle-wrapper.jar rename
+            val actualTargetFile = if (targetFile.name.endsWith(".jarX")) {
+                File(targetFile.parent, targetFile.nameWithoutExtension + ".jar")
+            } else {
+                targetFile
+            }
+
             inputStream.use { input ->
-                targetFile.outputStream().use { output ->
+                actualTargetFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
 
             // Set executable permissions for scripts
-            if (targetFile.name == "gradlew") {
-                targetFile.setExecutable(true)
+            if (actualTargetFile.name == "gradlew") {
+                actualTargetFile.setExecutable(true)
             }
+        } else {
+            debugln { "Resource not found: $resourcePath" }
         }
     }
 
@@ -165,8 +175,10 @@ fun cloneComposeApp(
                     // Development mode - read from filesystem
                     val dir = File(resourceUrl.toURI())
                     dir.walkTopDown().forEach { file ->
-                        val relativePath = file.relativeTo(dir)
-                        resources.add("$path/${relativePath.path}")
+                        if (file.isFile) {  // Only include files, not directories
+                            val relativePath = file.relativeTo(dir)
+                            resources.add("$path/${relativePath.path}")
+                        }
                     }
                 }
 
@@ -201,14 +213,31 @@ fun cloneComposeApp(
         copyResource(resourcePath, targetFile)
     }
 
-    // Replace placeholders in all files
+    // Replace placeholders in text files only (skip binary files)
     target.walkTopDown().forEach { file ->
         if (file.isFile) {
-            val content = file.readText()
-            var updatedContent = content.replace("{{namespace}}", packageName)
-            updatedContent = updatedContent.replace("{{app_name}}", appName)
-            if (content != updatedContent) {
-                file.writeText(updatedContent)
+            // Skip binary files and known non-text files
+            if (file.name.endsWith(".jar") ||
+                file.name.endsWith(".png") ||
+                file.name.endsWith(".jpg") ||
+                file.name.endsWith(".jpeg") ||
+                file.name.endsWith(".ico") ||
+                file.name.endsWith(".icns") ||
+                file.name.endsWith(".class")
+            ) {
+                return@forEach
+            }
+
+            try {
+                val content = file.readText()
+                var updatedContent = content.replace("{{namespace}}", packageName)
+                updatedContent = updatedContent.replace("{{app_name}}", appName)
+                if (content != updatedContent) {
+                    file.writeText(updatedContent)
+                }
+            } catch (e: Exception) {
+                // If we can't read as text, skip this file
+                debugln { "Skipping binary file: ${file.name}" }
             }
         }
     }
