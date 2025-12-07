@@ -19,7 +19,7 @@ val WEB = "web"
 
 suspend fun main(args: Array<String>) {
     ComposablesCli()
-        .subcommands(Init())
+        .subcommands(Init(), Update())
         .main(args)
 
 //    cloneComposeApp(
@@ -54,9 +54,24 @@ class ComposablesCli : CliktCommand(name = "composables") {
     """.trimIndent()
 }
 
-class Init : CliktCommand(
-    "init"
-) {
+class Update : CliktCommand("update") {
+    override fun run() {
+        try {
+            val process = ProcessBuilder("bash", "-c", "curl -fsSL https://composables.com/get-composables.sh | bash")
+                .inheritIO()
+                .start()
+            
+            val exitCode = process.waitFor()
+            if (exitCode != 0) {
+                echo("Update failed with exit code: $exitCode", err = true)
+            }
+        } catch (e: Exception) {
+            echo("Failed to run update: ${e.message}", err = true)
+        }
+    }
+}
+
+class Init : CliktCommand("init") {
     override fun help(context: Context): String = """
         Creates a new Compose Multiplatform app.
     """.trimIndent()
