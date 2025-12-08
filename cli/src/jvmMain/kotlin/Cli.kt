@@ -59,6 +59,7 @@ class Update : CliktCommand("update") {
     override fun help(context: Context): String = """
         Updates the CLI tool with the latest version
     """.trimIndent()
+
     override fun run() {
         try {
             val process = ProcessBuilder("bash", "-c", "curl -fsSL https://composables.com/get-composables.sh | bash")
@@ -236,12 +237,21 @@ class Init : CliktCommand("init") {
 
 class Target : CliktCommand("target") {
     override fun help(context: Context): String = """
-        Adds a new Kotlin target to the current Compose Multiplatform project.
+        Adds a new Kotlin target to the current Compose Multiplatform project (options: android, jvm, ios, web).
     """.trimIndent()
 
-    private val targetName by argument("target", help = "Target name to add (currently only 'android', 'jvm', 'ios', and 'web' are supported)")
+    private val targetName by argument(name = "target")
 
     override fun run() {
+        val validTargets = setOf("android", "jvm", "ios", "web")
+
+        if (targetName !in validTargets) {
+            echo("Unknown target '$targetName'")
+            echo("Available targets: android, jvm, ios, web")
+            echo("Usage: composables target <target-name>")
+            return
+        }
+
         val workingDir = System.getProperty("user.dir")
 
         if (!isValidComposeAppDirectory(workingDir)) {
@@ -251,59 +261,62 @@ class Target : CliktCommand("target") {
             return
         }
 
-        val composeAppBuildFile = File(workingDir, "composeApp/build.gradle.kts")
-        if (!composeAppBuildFile.exists()) {
-            echo("Could not find composeApp/build.gradle.kts file.")
+        val composeModuleBuildFile = findComposeModuleBuildFile(workingDir)
+        if (composeModuleBuildFile == null) {
+            echo("Could not find a Compose Multiplatform module in this project.")
             return
         }
 
         when (targetName) {
             "android" -> {
-                if (hasAndroidTarget(composeAppBuildFile)) {
+                if (hasAndroidTarget(composeModuleBuildFile)) {
                     echo("Android target is already configured in this project.")
                     return
                 }
                 try {
-                    addAndroidTarget(workingDir, composeAppBuildFile)
+                    addAndroidTarget(workingDir, composeModuleBuildFile)
                     echo("Android target added successfully!")
                     echo("Run './gradlew build' to verify the configuration.")
                 } catch (e: Exception) {
                     echo("Failed to add Android target: ${e.message}", err = true)
                 }
             }
+
             "jvm" -> {
-                if (hasJvmTarget(composeAppBuildFile)) {
+                if (hasJvmTarget(composeModuleBuildFile)) {
                     echo("JVM target is already configured in this project.")
                     return
                 }
                 try {
-                    addJvmTarget(workingDir, composeAppBuildFile)
+                    addJvmTarget(workingDir, composeModuleBuildFile)
                     echo("JVM target added successfully!")
                     echo("Run './gradlew build' to verify the configuration.")
                 } catch (e: Exception) {
                     echo("Failed to add JVM target: ${e.message}", err = true)
                 }
             }
+
             "ios" -> {
-                if (hasIosTarget(composeAppBuildFile)) {
+                if (hasIosTarget(composeModuleBuildFile)) {
                     echo("iOS target is already configured in this project.")
                     return
                 }
                 try {
-                    addIosTarget(workingDir, composeAppBuildFile)
+                    addIosTarget(workingDir, composeModuleBuildFile)
                     echo("iOS target added successfully!")
                     echo("Run './gradlew build' to verify the configuration.")
                 } catch (e: Exception) {
                     echo("Failed to add iOS target: ${e.message}", err = true)
                 }
             }
+
             "web" -> {
-                if (hasWebTarget(composeAppBuildFile)) {
+                if (hasWebTarget(composeModuleBuildFile)) {
                     echo("Web target is already configured in this project.")
                     return
                 }
                 try {
-                    addWebTarget(workingDir, composeAppBuildFile)
+                    addWebTarget(workingDir, composeModuleBuildFile)
                     echo("Web target added successfully!")
                     echo("Run './gradlew build' to verify the configuration.")
                 } catch (e: Exception) {
@@ -316,29 +329,79 @@ class Target : CliktCommand("target") {
     private fun isValidComposeAppDirectory(directory: String): Boolean {
         val dir = File(directory)
 
-        // Check for composeApp directory
-        val composeAppDir = File(dir, "composeApp")
-        if (!composeAppDir.exists() || !composeAppDir.isDirectory) {
-            return false
-        }
-
-        // Check for build.gradle.kts in composeApp
-        val composeAppBuildFile = File(composeAppDir, "build.gradle.kts")
-        if (!composeAppBuildFile.exists()) {
-            return false
-        }
-
         // Check for root build.gradle.kts
         val rootBuildFile = File(dir, "build.gradle.kts")
         if (!rootBuildFile.exists()) {
             return false
         }
 
-        // Verify composeApp build.gradle.kts has Kotlin multiplatform configuration
-        val content = composeAppBuildFile.readText()
-        return content.contains("kotlin {") &&
-               content.contains("multiplatform") &&
-               content.contains("compose")
+        // Look for any subdirectory with build.gradle.kts that has Compose dependencies
+        val subDirs = dir.listFiles()?.filter { subDir ->
+            subDir.isDirectory && File(subDir, "build.gradle.kts").exists()
+        } ?: return false
+
+        return subDirs.any { subDir ->
+            val buildFile = File(subDir, "build.gradle.kts")
+            val content = buildFile.readText()
+            hasComposeDependencies(content)
+        }
+    }
+
+    private fun hasComposeDependencies(content: String): Boolean {
+        val composeDependencies = listOf(
+            "compose.components.resources",
+            "compose.components.uiToolingPreview",
+            "compose.material3",
+            "compose.desktop.currentOs",
+            "compose.preview",
+            "compose.runtime"
+        )
+
+        return composeDependencies.any { dependency ->
+            content.contains(dependency)
+        }
+    }
+
+    private fun findComposeModuleBuildFile(workingDir: String): File? {
+        val dir = File(workingDir)
+
+        val composeModules = dir.listFiles()?.filter { subDir ->
+            subDir.isDirectory && File(subDir, "build.gradle.kts").exists()
+        }?.filter { subDir ->
+            val buildFile = File(subDir, "build.gradle.kts")
+            val content = buildFile.readText()
+            hasComposeDependencies(content)
+        } ?: return null
+
+        when {
+            composeModules.isEmpty() -> return null
+            composeModules.size == 1 -> return File(composeModules.first(), "build.gradle.kts")
+            else -> {
+                return selectComposeModule(composeModules)
+            }
+        }
+    }
+
+    private fun selectComposeModule(composeModules: List<File>): File? {
+        val sortedModules = composeModules.sortedBy { it.name }
+        echo("Multiple Compose modules detected:")
+        sortedModules.forEachIndexed { index, module ->
+            echo("  ${index + 1}. ${module.name}")
+        }
+        
+        while (true) {
+            print("Select a module (1-${sortedModules.size}): ")
+            val input = readln().trim()
+            
+            val selection = input.toIntOrNull()
+            if (selection != null && selection in 1..sortedModules.size) {
+                val selectedModule = sortedModules[selection - 1]
+                echo("Selected module: ${selectedModule.name}")
+                return File(selectedModule, "build.gradle.kts")
+            } else {
+                echo("Invalid selection. Please enter a number between 1 and ${sortedModules.size}")
+            }
+        }
     }
 
     private fun hasAndroidTarget(buildFile: File): Boolean {
@@ -456,7 +519,8 @@ class Target : CliktCommand("target") {
         buildFile.writeText(lines.joinToString("\n"))
 
         // Create androidMain source set and MainActivity
-        createAndroidSourceSet(workingDir, namespace)
+        val moduleDir = buildFile.parentFile
+        createAndroidSourceSet(moduleDir, namespace)
 
         // Update root build.gradle.kts
         updateRootBuildFile(workingDir)
@@ -603,9 +667,8 @@ android-application = { id = "com.android.application", version.ref = "agp" }
         gradlePropertiesFile.writeText(content)
     }
 
-    private fun createAndroidSourceSet(workingDir: String, namespace: String) {
-        val composeAppDir = File(workingDir, "composeApp")
-        val androidMainDir = File(composeAppDir, "src/androidMain/kotlin")
+    private fun createAndroidSourceSet(moduleDir: File, namespace: String) {
+        val androidMainDir = File(moduleDir, "src/androidMain/kotlin")
         val packageDir = File(androidMainDir, namespace.replace(".", "/"))
 
         // Create directories
@@ -711,12 +774,12 @@ fun DefaultPreview() {
         buildFile.writeText(lines.joinToString("\n"))
 
         // Create jvmMain source set and main function
-        createJvmSourceSet(workingDir, namespace)
+        val moduleDir = buildFile.parentFile
+        createJvmSourceSet(moduleDir, namespace)
     }
 
-    private fun createJvmSourceSet(workingDir: String, namespace: String) {
-        val composeAppDir = File(workingDir, "composeApp")
-        val jvmMainDir = File(composeAppDir, "src/jvmMain/kotlin")
+    private fun createJvmSourceSet(moduleDir: File, namespace: String) {
+        val jvmMainDir = File(moduleDir, "src/jvmMain/kotlin")
         val packageDir = File(jvmMainDir, namespace.replace(".", "/"))
 
         // Create directories
@@ -830,15 +893,15 @@ fun DesktopAppPreview() {
         buildFile.writeText(lines.joinToString("\n"))
 
         // Create iosMain source set
-        createIosSourceSet(workingDir, extractNamespace(lines))
+        val moduleDir = buildFile.parentFile
+        createIosSourceSet(moduleDir, extractNamespace(lines))
 
         // Copy iOS app directory
-        copyIosAppDirectory(workingDir)
+        copyIosAppDirectory(workingDir) // iOS app is still at root level
     }
 
-    private fun createIosSourceSet(workingDir: String, namespace: String) {
-        val composeAppDir = File(workingDir, "composeApp")
-        val iosMainDir = File(composeAppDir, "src/iosMain/kotlin")
+    private fun createIosSourceSet(moduleDir: File, namespace: String) {
+        val iosMainDir = File(moduleDir, "src/iosMain/kotlin")
         val packageDir = iosMainDir
 
         // Create directories
@@ -987,20 +1050,19 @@ fun IosAppPreview() {
         buildFile.writeText(lines.joinToString("\n"))
 
         // Create web source sets
-        createWebSourceSets(workingDir, extractNamespace(lines))
+        val moduleDir = buildFile.parentFile
+        createWebSourceSets(moduleDir, extractNamespace(lines))
 
         // Copy webpack.config.d directory
-        copyWebpackConfigDirectory(workingDir)
+        copyWebpackConfigDirectory(moduleDir)
 
         // Copy resources directory
-        copyResourcesDirectory(workingDir)
+        copyResourcesDirectory(moduleDir)
     }
 
-    private fun createWebSourceSets(workingDir: String, namespace: String) {
-        val composeAppDir = File(workingDir, "composeApp")
-
+    private fun createWebSourceSets(moduleDir: File, namespace: String) {
         // Create webMain source set
-        val webMainDir = File(composeAppDir, "src/webMain/kotlin")
+        val webMainDir = File(moduleDir, "src/webMain/kotlin")
         val webPackageDir = webMainDir
         webPackageDir.mkdirs()
 
@@ -1070,8 +1132,8 @@ fun WebAppPreview() {
         webMainFile.writeText(webMainContent)
     }
 
-    private fun copyWebpackConfigDirectory(workingDir: String) {
-        val targetDir = File(workingDir, "composeApp/webpack.config.d")
+    private fun copyWebpackConfigDirectory(moduleDir: File) {
+        val targetDir = File(moduleDir, "webpack.config.d")
 
         fun copyResource(resourcePath: String, targetFile: File) {
             val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
@@ -1100,6 +1162,7 @@ fun WebAppPreview() {
                             }
                         }
                     }
+
                     "jar" -> {
                         val jarPath = resourceUrl.path.substringBefore("!")
                         val jarFile = java.util.jar.JarFile(File(jarPath.substringAfter("file:")))
@@ -1127,8 +1190,8 @@ fun WebAppPreview() {
         }
     }
 
-    private fun copyResourcesDirectory(workingDir: String) {
-        val targetDir = File(workingDir, "composeApp/src/webMain/resources")
+    private fun copyResourcesDirectory(moduleDir: File) {
+        val targetDir = File(moduleDir, "src/webMain/resources")
 
         fun copyResource(resourcePath: String, targetFile: File) {
             val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
@@ -1157,6 +1220,7 @@ fun WebAppPreview() {
                             }
                         }
                     }
+
                     "jar" -> {
                         val jarPath = resourceUrl.path.substringBefore("!")
                         val jarFile = java.util.jar.JarFile(File(jarPath.substringAfter("file:")))
@@ -1198,7 +1262,7 @@ fun WebAppPreview() {
     }
 
     private fun copyIosAppDirectory(workingDir: String) {
-        val targetDir = File(workingDir, "iosApp")
+        val targetDir = File(workingDir, "iosApp") // iOS app is always at root
 
         fun copyResource(resourcePath: String, targetFile: File) {
             val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
@@ -1227,6 +1291,7 @@ fun WebAppPreview() {
                             }
                         }
                     }
+
                     "jar" -> {
                         val jarPath = resourceUrl.path.substringBefore("!")
                         val jarFile = java.util.jar.JarFile(File(jarPath.substringAfter("file:")))
