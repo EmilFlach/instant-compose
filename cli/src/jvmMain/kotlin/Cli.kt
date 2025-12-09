@@ -103,6 +103,15 @@ class Init : CliktCommand("init") {
                         echo("Operation cancelled.")
                         return
                     }
+                    
+                    // Check Kotlin version
+                    val kotlinVersion = getKotlinVersion(target)
+                    if (kotlinVersion != null && !isKotlinVersionSupported(kotlinVersion)) {
+                        echo("Kotlin version $kotlinVersion is not supported. At least version 2.2.21 is required.")
+                        echo("Please update your Kotlin version and try again.")
+                        return
+                    }
+                    
                     val moduleName = readUniqueModuleName(target)
                     val appName = readAppName()
                     val namespace = readNamespace()
@@ -2742,5 +2751,73 @@ private fun createIosAppDirectory(
                 // Skip binary files
             }
         }
+    }
+}
+
+private fun getKotlinVersion(projectDir: File): String? {
+    try {
+        // Try to get Kotlin version from gradle.properties
+        val gradleProperties = File(projectDir, "gradle.properties")
+        if (gradleProperties.exists()) {
+            val content = gradleProperties.readText()
+            val kotlinVersionMatch = Regex("kotlin\\.version\\s*=\\s*([^\n\r]+)").find(content)
+            if (kotlinVersionMatch != null) {
+                return kotlinVersionMatch.groupValues[1].trim()
+            }
+        }
+
+        // Try to get from libs.versions.toml
+        val versionsToml = File(projectDir, "gradle/libs.versions.toml")
+        if (versionsToml.exists()) {
+            val content = versionsToml.readText()
+            val kotlinVersionMatch = Regex("kotlin\\s*=\\s*\"?([^\"]+)\"?").find(content)
+            if (kotlinVersionMatch != null) {
+                return kotlinVersionMatch.groupValues[1].trim()
+            }
+        }
+
+        // Try to run gradle and get the version
+        val process = ProcessBuilder("./gradlew", "properties", "-q", "--no-daemon")
+            .directory(projectDir)
+            .redirectErrorStream(true)
+            .start()
+        
+        val output = process.inputStream.bufferedReader().readText()
+        process.waitFor()
+        
+        val versionMatch = Regex("kotlin\\.version\\s*=\\s*([^\n\r]+)").find(output)
+        if (versionMatch != null) {
+            return versionMatch.groupValues[1].trim()
+        }
+        
+    } catch (e: Exception) {
+        // Failed to get version, return null
+    }
+    
+    return null
+}
+
+private fun isKotlinVersionSupported(version: String): Boolean {
+    return try {
+        val parts = version.split(".")
+        if (parts.size >= 3) {
+            val major = parts[0].toInt()
+            val minor = parts[1].toInt()
+            val patch = parts[2].toInt()
+            
+            // Check if version is at least 2.2.21
+            if (major > 2) return true
+            if (major < 2) return false
+            if (minor > 2) return true
+            if (minor < 2) return false
+            if (patch >= 21) return true
+            return false
+        } else {
+            // For versions like "2.2" or "2.2.0", assume they're too old
+            false
+        }
+    } catch (e: Exception) {
+        // Failed to parse version, assume it's not supported
+        false
     }
 }
