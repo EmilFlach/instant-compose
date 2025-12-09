@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-12-9
+
+### Fixed
+- Added Kotlin 2.2.21 as a requirement when adding modules to existing Gradle projects, as it is required by Hot Reload.
+- Fix a problem where Android projects would not generate the iOS binary
+
 ## [0.4.0] - 2025-12-9
 
 ### Added
