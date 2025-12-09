@@ -1916,7 +1916,6 @@ android.useAndroidX=true
                 sourcesets.add(
                     """    sourceSets {
         commonMain.dependencies {
-            implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(compose.material3)
         }"""
@@ -2547,7 +2546,6 @@ fun createModuleOnly(
                 sourcesets.add(
                     """    sourceSets {
         commonMain.dependencies {
-            implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(compose.material3)
         }"""
