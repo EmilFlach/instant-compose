@@ -28,4 +28,3 @@ cmake-build-*/
 # IntelliJ
 out/
 temp/
-composeApp/
