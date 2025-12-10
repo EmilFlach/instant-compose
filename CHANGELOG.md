@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+# [0.4.5] - 2025-12-10
+
+### Fixed
+- Fixed a bug where the JVM and Web targets would have no sourceset generated. 
+- Fixed a crash after using the `update` command.
+- Fixed an issue where entering a prompt would be slower than normal.
+- Fixed the displayed output directory when creating apps or modules.
+- Fixed some blank new lines in the CLI output.
+
 ## [0.4.1] - 2025-12-9
 
 ### Fixed
