@@ -263,7 +263,7 @@ class Init : CliktCommand("init") {
         while (true) {
             val targets = mutableSetOf<String>()
 
-            echo("\nWhich platforms would you like your app to run on?")
+            echo("Which platforms would you like your app to run on?")
 
             while (true) {
                 echo("Android (y/n, default: y): ", trailingNewline = false)
@@ -1799,6 +1799,7 @@ fun cloneGradleProject(
         val isInsideAKotlinSourceSet = targetPath.startsWith("composeApp/src/")
         if (isInsideAKotlinSourceSet) {
             val sourceSetType = targetPath.substringAfter("composeApp/src/").substringBefore("/")
+
             when (sourceSetType) {
                 "androidMain" -> if (!targets.contains("android")) return@forEach
                 "iosMain" -> if (!targets.contains("ios")) return@forEach
