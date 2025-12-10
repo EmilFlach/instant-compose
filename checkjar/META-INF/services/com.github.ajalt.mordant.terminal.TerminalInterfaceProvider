@@ -1,3 +1,0 @@
-com.github.ajalt.mordant.terminal.terminalinterface.jna.TerminalInterfaceProviderJna
-com.github.ajalt.mordant.terminal.terminalinterface.ffm.TerminalInterfaceProviderFfm
-com.github.ajalt.mordant.terminal.terminalinterface.nativeimage.TerminalInterfaceProviderNativeImage

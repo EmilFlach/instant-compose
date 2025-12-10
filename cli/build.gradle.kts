@@ -71,6 +71,9 @@ fun registerShadowJar(targetName: String) {
                 val shadowJar = register<ShadowJar>("${targetName}ShadowJar") {
                     group = "build"
                     from(output)
+                    from("src/jvmMain/resources/project") {
+                        into("project")
+                    }
                     configurations = listOf(runtimeDependencyFiles)
 
                     archiveFileName.set("$cliName.jar")

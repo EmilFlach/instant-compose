@@ -13,48 +13,11 @@ import com.github.ajalt.clikt.parameters.options.versionOption
 import java.io.File
 import java.io.InputStream
 import java.util.jar.JarFile
-import java.util.zip.ZipInputStream
-import java.io.ByteArrayOutputStream
 
 val ANDROID = "android"
 val JVM = "jvm"
 val IOS = "ios"
 val WEB = "web"
-
-private var projectZipCache: Map<String, ByteArray>? = null
-
-private fun getProjectZipContents(): Map<String, ByteArray> {
-    projectZipCache?.let { return it }
-    
-    val zipInputStream = object {}.javaClass.getResourceAsStream("/project.zip")
-        ?: throw IllegalStateException("project.zip not found in resources")
-    
-    val contents = mutableMapOf<String, ByteArray>()
-    zipInputStream.use { input ->
-        ZipInputStream(input).use { zipIn ->
-            var entry = zipIn.nextEntry
-            while (entry != null) {
-                if (!entry.isDirectory) {
-                    val output = ByteArrayOutputStream()
-                    zipIn.copyTo(output)
-                    contents[entry.name] = output.toByteArray()
-                }
-                zipIn.closeEntry()
-                entry = zipIn.nextEntry
-            }
-        }
-    }
-    
-    projectZipCache = contents
-    return contents
-}
-
-private fun getResourceFromZip(path: String): InputStream? {
-    val contents = getProjectZipContents()
-    val zipPath = path.removePrefix("/project/")
-    val bytes = contents[zipPath] ?: return null
-    return bytes.inputStream()
-}
 
 suspend fun main(args: Array<String>) {
     ComposablesCli()
@@ -955,7 +918,7 @@ fun DefaultPreview() {
 
     private fun copyAndroidResources(moduleDir: File, namespace: String) {
         fun copyResource(resourcePath: String, targetFile: File) {
-            val inputStream = getResourceFromZip(resourcePath)
+            val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
             if (inputStream != null) {
                 targetFile.parentFile?.mkdirs()
                 inputStream.use { input ->
@@ -968,13 +931,32 @@ fun DefaultPreview() {
 
         fun listResources(path: String): List<String> {
             val resources = mutableListOf<String>()
-            val contents = getProjectZipContents()
-            val searchPath = path.removePrefix("/project/")
-            
-            contents.keys.forEach { entryPath ->
-                if (!entryPath.endsWith("/")) { // Only include files, not directories
-                    if (entryPath.startsWith(searchPath)) {
-                        resources.add("/project/$entryPath")
+            val resourceUrl = object {}.javaClass.getResource(path)
+
+            if (resourceUrl != null) {
+                when (resourceUrl.protocol) {
+                    "file" -> {
+                        val dir = File(resourceUrl.toURI())
+                        dir.walkTopDown().forEach { file ->
+                            if (file.isFile) {
+                                val relativePath = file.relativeTo(dir)
+                                resources.add("$path/${relativePath.path}")
+                            }
+                        }
+                    }
+
+                    "jar" -> {
+                        val jarPath = resourceUrl.path.substringBefore("!")
+                        val jarFile = JarFile(File(jarPath.substringAfter("file:")))
+                        val entries = jarFile.entries()
+
+                        while (entries.hasMoreElements()) {
+                            val entry = entries.nextElement()
+                            if (entry.name.startsWith(path.substring(1)) && !entry.isDirectory) {
+                                resources.add("/${entry.name}")
+                            }
+                        }
+                        jarFile.close()
                     }
                 }
             }
@@ -1479,7 +1461,7 @@ fun WebAppPreview() {
         val targetDir = File(moduleDir, "webpack.config.d")
 
         fun copyResource(resourcePath: String, targetFile: File) {
-            val inputStream = getResourceFromZip(resourcePath)
+            val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
             if (inputStream != null) {
                 targetFile.parentFile?.mkdirs()
                 inputStream.use { input ->
@@ -1492,13 +1474,32 @@ fun WebAppPreview() {
 
         fun listResources(path: String): List<String> {
             val resources = mutableListOf<String>()
-            val contents = getProjectZipContents()
-            val searchPath = path.removePrefix("/project/")
-            
-            contents.keys.forEach { entryPath ->
-                if (!entryPath.endsWith("/")) { // Only include files, not directories
-                    if (entryPath.startsWith(searchPath)) {
-                        resources.add("/project/$entryPath")
+            val resourceUrl = object {}.javaClass.getResource(path)
+
+            if (resourceUrl != null) {
+                when (resourceUrl.protocol) {
+                    "file" -> {
+                        val dir = File(resourceUrl.toURI())
+                        dir.walkTopDown().forEach { file ->
+                            if (file.isFile) {
+                                val relativePath = file.relativeTo(dir)
+                                resources.add("$path/${relativePath.path}")
+                            }
+                        }
+                    }
+
+                    "jar" -> {
+                        val jarPath = resourceUrl.path.substringBefore("!")
+                        val jarFile = JarFile(File(jarPath.substringAfter("file:")))
+                        val entries = jarFile.entries()
+
+                        while (entries.hasMoreElements()) {
+                            val entry = entries.nextElement()
+                            if (entry.name.startsWith(path.substring(1)) && !entry.isDirectory) {
+                                resources.add("/${entry.name}")
+                            }
+                        }
+                        jarFile.close()
                     }
                 }
             }
@@ -1518,7 +1519,7 @@ fun WebAppPreview() {
         val targetDir = File(moduleDir, "src/webMain/resources")
 
         fun copyResource(resourcePath: String, targetFile: File) {
-            val inputStream = getResourceFromZip(resourcePath)
+            val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
             if (inputStream != null) {
                 targetFile.parentFile?.mkdirs()
                 inputStream.use { input ->
@@ -1531,13 +1532,32 @@ fun WebAppPreview() {
 
         fun listResources(path: String): List<String> {
             val resources = mutableListOf<String>()
-            val contents = getProjectZipContents()
-            val searchPath = path.removePrefix("/project/")
-            
-            contents.keys.forEach { entryPath ->
-                if (!entryPath.endsWith("/")) { // Only include files, not directories
-                    if (entryPath.startsWith(searchPath)) {
-                        resources.add("/project/$entryPath")
+            val resourceUrl = object {}.javaClass.getResource(path)
+
+            if (resourceUrl != null) {
+                when (resourceUrl.protocol) {
+                    "file" -> {
+                        val dir = File(resourceUrl.toURI())
+                        dir.walkTopDown().forEach { file ->
+                            if (file.isFile) {
+                                val relativePath = file.relativeTo(dir)
+                                resources.add("$path/${relativePath.path}")
+                            }
+                        }
+                    }
+
+                    "jar" -> {
+                        val jarPath = resourceUrl.path.substringBefore("!")
+                        val jarFile = JarFile(File(jarPath.substringAfter("file:")))
+                        val entries = jarFile.entries()
+
+                        while (entries.hasMoreElements()) {
+                            val entry = entries.nextElement()
+                            if (entry.name.startsWith(path.substring(1)) && !entry.isDirectory) {
+                                resources.add("/${entry.name}")
+                            }
+                        }
+                        jarFile.close()
                     }
                 }
             }
@@ -1571,7 +1591,7 @@ fun WebAppPreview() {
         val targetDir = File(workingDir, iosAppName) // iOS app directory name based on module
 
         fun copyResource(resourcePath: String, targetFile: File) {
-            val inputStream = getResourceFromZip(resourcePath)
+            val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
             if (inputStream != null) {
                 targetFile.parentFile?.mkdirs()
                 inputStream.use { input ->
@@ -1584,13 +1604,32 @@ fun WebAppPreview() {
 
         fun listResources(path: String): List<String> {
             val resources = mutableListOf<String>()
-            val contents = getProjectZipContents()
-            val searchPath = path.removePrefix("/project/")
-            
-            contents.keys.forEach { entryPath ->
-                if (!entryPath.endsWith("/")) { // Only include files, not directories
-                    if (entryPath.startsWith(searchPath)) {
-                        resources.add("/project/$entryPath")
+            val resourceUrl = object {}.javaClass.getResource(path)
+
+            if (resourceUrl != null) {
+                when (resourceUrl.protocol) {
+                    "file" -> {
+                        val dir = File(resourceUrl.toURI())
+                        dir.walkTopDown().forEach { file ->
+                            if (file.isFile) {
+                                val relativePath = file.relativeTo(dir)
+                                resources.add("$path/${relativePath.path}")
+                            }
+                        }
+                    }
+
+                    "jar" -> {
+                        val jarPath = resourceUrl.path.substringBefore("!")
+                        val jarFile = JarFile(File(jarPath.substringAfter("file:")))
+                        val entries = jarFile.entries()
+
+                        while (entries.hasMoreElements()) {
+                            val entry = entries.nextElement()
+                            if (entry.name.startsWith(path.substring(1)) && !entry.isDirectory) {
+                                resources.add("/${entry.name}")
+                            }
+                        }
+                        jarFile.close()
                     }
                 }
             }
@@ -1682,7 +1721,7 @@ fun cloneGradleProject(
     val target = File(targetDir).resolve(dirName)
 
     fun copyResource(resourcePath: String, targetFile: File) {
-        val inputStream = getResourceFromZip(resourcePath)
+        val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
         if (inputStream != null) {
             targetFile.parentFile?.mkdirs()
 
@@ -1711,13 +1750,34 @@ fun cloneGradleProject(
 
     fun listResources(path: String): List<String> {
         val resources = mutableListOf<String>()
-        val contents = getProjectZipContents()
-        val searchPath = if (path == "/project") "" else path.removePrefix("/project/")
-        
-        contents.keys.forEach { entryPath ->
-            if (!entryPath.endsWith("/")) { // Only include files, not directories
-                if (searchPath.isEmpty() || entryPath.startsWith(searchPath)) {
-                    resources.add("/project/$entryPath")
+        val resourceUrl = object {}.javaClass.getResource(path)
+
+        if (resourceUrl != null) {
+            when (resourceUrl.protocol) {
+                "file" -> {
+                    // Development mode - read from filesystem
+                    val dir = File(resourceUrl.toURI())
+                    dir.walkTopDown().forEach { file ->
+                        if (file.isFile) {  // Only include files, not directories
+                            val relativePath = file.relativeTo(dir)
+                            resources.add("$path/${relativePath.path}")
+                        }
+                    }
+                }
+
+                "jar" -> {
+                    // Production mode - read from JAR
+                    val jarPath = resourceUrl.path.substringBefore("!")
+                    val jarFile = JarFile(File(jarPath.substringAfter("file:")))
+                    val entries = jarFile.entries()
+
+                    while (entries.hasMoreElements()) {
+                        val entry = entries.nextElement()
+                        if (entry.name.startsWith(path.substring(1)) && !entry.isDirectory) {
+                            resources.add("/${entry.name}")
+                        }
+                    }
+                    jarFile.close()
                 }
             }
         }
@@ -2354,7 +2414,7 @@ fun createModuleOnly(
     val moduleDir = File(targetDir, moduleName)
 
     fun copyResource(resourcePath: String, targetFile: File) {
-        val inputStream = getResourceFromZip(resourcePath)
+        val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
         if (inputStream != null) {
             targetFile.parentFile?.mkdirs()
             inputStream.use { input ->
@@ -2370,13 +2430,32 @@ fun createModuleOnly(
 
     fun listResources(path: String): List<String> {
         val resources = mutableListOf<String>()
-        val contents = getProjectZipContents()
-        val searchPath = path.removePrefix("/project/")
-        
-        contents.keys.forEach { entryPath ->
-            if (!entryPath.endsWith("/")) { // Only include files, not directories
-                if (entryPath.startsWith(searchPath)) {
-                    resources.add("/project/$entryPath")
+        val resourceUrl = object {}.javaClass.getResource(path)
+
+        if (resourceUrl != null) {
+            when (resourceUrl.protocol) {
+                "file" -> {
+                    val dir = File(resourceUrl.toURI())
+                    dir.walkTopDown().forEach { file ->
+                        if (file.isFile) {
+                            val relativePath = file.relativeTo(dir)
+                            resources.add("$path/${relativePath.path}")
+                        }
+                    }
+                }
+
+                "jar" -> {
+                    val jarPath = resourceUrl.path.substringBefore("!")
+                    val jarFile = JarFile(File(jarPath.substringAfter("file:")))
+                    val entries = jarFile.entries()
+
+                    while (entries.hasMoreElements()) {
+                        val entry = entries.nextElement()
+                        if (entry.name.startsWith(path.substring(1)) && !entry.isDirectory) {
+                            resources.add("/${entry.name}")
+                        }
+                    }
+                    jarFile.close()
                 }
             }
         }
@@ -2656,7 +2735,7 @@ private fun createIosAppDirectory(
     val targetDir = File(targetDir, iosAppName)
 
     fun copyResource(resourcePath: String, targetFile: File) {
-        val inputStream = getResourceFromZip(resourcePath)
+        val inputStream: InputStream? = object {}.javaClass.getResourceAsStream(resourcePath)
         if (inputStream != null) {
             targetFile.parentFile?.mkdirs()
             inputStream.use { input ->
@@ -2669,13 +2748,32 @@ private fun createIosAppDirectory(
 
     fun listResources(path: String): List<String> {
         val resources = mutableListOf<String>()
-        val contents = getProjectZipContents()
-        val searchPath = path.removePrefix("/project/")
-        
-        contents.keys.forEach { entryPath ->
-            if (!entryPath.endsWith("/")) { // Only include files, not directories
-                if (entryPath.startsWith(searchPath)) {
-                    resources.add("/project/$entryPath")
+        val resourceUrl = object {}.javaClass.getResource(path)
+
+        if (resourceUrl != null) {
+            when (resourceUrl.protocol) {
+                "file" -> {
+                    val dir = File(resourceUrl.toURI())
+                    dir.walkTopDown().forEach { file ->
+                        if (file.isFile) {
+                            val relativePath = file.relativeTo(dir)
+                            resources.add("$path/${relativePath.path}")
+                        }
+                    }
+                }
+
+                "jar" -> {
+                    val jarPath = resourceUrl.path.substringBefore("!")
+                    val jarFile = JarFile(File(jarPath.substringAfter("file:")))
+                    val entries = jarFile.entries()
+
+                    while (entries.hasMoreElements()) {
+                        val entry = entries.nextElement()
+                        if (entry.name.startsWith(path.substring(1)) && !entry.isDirectory) {
+                            resources.add("/${entry.name}")
+                        }
+                    }
+                    jarFile.close()
                 }
             }
         }
