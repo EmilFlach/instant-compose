@@ -52,45 +52,49 @@ class Update : CliktCommand("update") {
     override fun run() {
         try {
             echo("Updating Composables CLI...")
-            
+
             // Get current JAR path
             val currentJarPath = this::class.java.protectionDomain.codeSource.location.path
             val installDir = File(currentJarPath).parent
-            
+
             // Download to temporary location first
             val tempJar = File(installDir, "composables.jar.tmp")
-            
+
             echo("Fetching latest version...")
-            val latestVersion = ProcessBuilder("bash", "-c", "curl -s https://api.github.com/repos/composablehorizons/composables-cli/releases/latest | grep '\"tag_name\":' | sed -E 's/.*\"([^\"]+)\".*/\\1/'")
+            val latestVersion = ProcessBuilder(
+                "bash",
+                "-c",
+                "curl -s https://api.github.com/repos/composablehorizons/composables-cli/releases/latest | grep '\"tag_name\":' | sed -E 's/.*\"([^\"]+)\".*/\\1/'"
+            )
                 .redirectErrorStream(true)
                 .start()
                 .inputStream.bufferedReader()
                 .readText()
                 .trim()
-            
+
             if (latestVersion.isEmpty()) {
                 echo("Failed to fetch latest version", err = true)
                 return
             }
-            
+
             echo("Latest version: $latestVersion")
             echo("Downloading...")
-            
+
             val downloadProcess = ProcessBuilder(
-                "curl", "-fSL", 
+                "curl", "-fSL",
                 "https://github.com/composablehorizons/composables-cli/releases/download/$latestVersion/composables.jar",
                 "-o", tempJar.absolutePath
             ).inheritIO().start()
-            
+
             val downloadExitCode = downloadProcess.waitFor()
             if (downloadExitCode != 0) {
                 echo("Failed to download new version", err = true)
                 tempJar.delete()
                 return
             }
-            
+
             echo("✓ Downloaded new version")
-            
+
             // Replace the JAR file
             val currentJar = File(currentJarPath)
             if (currentJar.exists()) {
@@ -100,16 +104,16 @@ class Update : CliktCommand("update") {
                     return
                 }
             }
-            
+
             if (!tempJar.renameTo(currentJar)) {
                 echo("Failed to install new JAR file", err = true)
                 tempJar.delete()
                 return
             }
-            
+
             echo("✓ Update completed successfully!")
             echo("Note: Restart your terminal to use the new version")
-            
+
         } catch (e: Exception) {
             echo("Failed to run update: ${e.message}", err = true)
         }
@@ -148,13 +152,13 @@ class Init : CliktCommand("init") {
                         File(target, "settings.gradle").exists()
 
                 if (isGradleProject) {
-                    print("Gradle project detected. This will add a new module to your existing project. Is this what you want? y/n ")
+                    echo("Gradle project detected. This will add a new module to your existing project. Is this what you want? y/n ", trailingNewline = false)
                     val response = readln().trim().lowercase()
                     if (response != "y" && response != "yes") {
                         echo("Operation cancelled.")
                         return
                     }
-                    
+
                     // Check Kotlin version
                     val kotlinVersion = getKotlinVersion(target)
                     if (kotlinVersion != null && !isKotlinVersionSupported(kotlinVersion)) {
@@ -162,7 +166,7 @@ class Init : CliktCommand("init") {
                         echo("Please update your Kotlin version and try again.")
                         return
                     }
-                    
+
                     val moduleName = readUniqueModuleName(target)
                     val appName = readAppName()
                     val namespace = readNamespace()
@@ -222,9 +226,8 @@ class Init : CliktCommand("init") {
 
     private fun readNamespace(): String {
         while (true) {
-            print("Enter package name (default: com.example.app): ")
+            echo("Enter package name (default: com.example.app): ", trailingNewline = false)
             val namespace = readln().trim()
-
             if (namespace.isEmpty()) {
                 return "com.example.app"
             }
@@ -240,7 +243,7 @@ class Init : CliktCommand("init") {
 
     private fun readAppName(): String {
         while (true) {
-            print("Enter app name (default: My App): ")
+            echo("Enter app name (default: My App): ", trailingNewline = false)
             val appName = readln().trim()
 
             if (appName.isEmpty()) {
@@ -263,7 +266,7 @@ class Init : CliktCommand("init") {
             echo("\nWhich platforms would you like your app to run on?")
 
             while (true) {
-                print("Android (y/n, default: y): ")
+                echo("Android (y/n, default: y): ", trailingNewline = false)
                 val android = readln().trim().lowercase()
                 if (android.isEmpty() || android == "y" || android == "yes") {
                     targets.add(ANDROID)
@@ -272,7 +275,7 @@ class Init : CliktCommand("init") {
             }
 
             while (true) {
-                print("JVM (Desktop) (y/n, default: y): ")
+                echo("JVM (Desktop) (y/n, default: y): ", trailingNewline = false)
                 val jvm = readln().trim().lowercase()
                 if (jvm.isEmpty() || jvm == "y" || jvm == "yes") {
                     targets.add(JVM)
@@ -281,7 +284,7 @@ class Init : CliktCommand("init") {
             }
 
             while (true) {
-                print("iOS (y/n, default: y): ")
+                echo("iOS (y/n, default: y): ", trailingNewline = false)
                 val ios = readln().trim().lowercase()
                 if (ios.isEmpty() || ios == "y" || ios == "yes") {
                     targets.add(IOS)
@@ -290,7 +293,7 @@ class Init : CliktCommand("init") {
             }
 
             while (true) {
-                print("Web (y/n, default: y): ")
+                echo("Web (y/n, default: y): ", trailingNewline = false)
                 val web = readln().trim().lowercase()
                 if (web.isEmpty() || web == "y" || web == "yes") {
                     targets.add(WEB)
@@ -315,7 +318,7 @@ class Init : CliktCommand("init") {
 
     private fun readModuleName(projectName: String): String {
         while (true) {
-            print("Enter module name (default: composeApp): ")
+            echo("Enter module name (default: composeApp): ", trailingNewline = false)
             val moduleName = readln().trim()
 
             if (moduleName.isEmpty()) {
@@ -338,7 +341,7 @@ class Init : CliktCommand("init") {
 
     private fun readUniqueModuleName(targetDir: File): String {
         while (true) {
-            print("Enter module name (default: composeApp): ")
+            echo("Enter module name (default: composeApp): ", trailingNewline = false)
             val moduleName = readln().trim()
 
             if (moduleName.isEmpty()) {
@@ -554,7 +557,7 @@ class Target : CliktCommand("target") {
         }
 
         while (true) {
-            print("Select a module (1-${sortedModules.size}): ")
+            echo("Select a module (1-${sortedModules.size}): ", trailingNewline = false)
             val input = readln().trim()
 
             val selection = input.toIntOrNull()
@@ -2832,19 +2835,19 @@ private fun getKotlinVersion(projectDir: File): String? {
             .directory(projectDir)
             .redirectErrorStream(true)
             .start()
-        
+
         val output = process.inputStream.bufferedReader().readText()
         process.waitFor()
-        
+
         val versionMatch = Regex("kotlin\\.version\\s*=\\s*([^\n\r]+)").find(output)
         if (versionMatch != null) {
             return versionMatch.groupValues[1].trim()
         }
-        
+
     } catch (e: Exception) {
         // Failed to get version, return null
     }
-    
+
     return null
 }
 
@@ -2855,7 +2858,7 @@ private fun isKotlinVersionSupported(version: String): Boolean {
             val major = parts[0].toInt()
             val minor = parts[1].toInt()
             val patch = parts[2].toInt()
-            
+
             // Check if version is at least 2.2.21
             if (major > 2) return true
             if (major < 2) return false
