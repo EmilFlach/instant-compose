@@ -1196,21 +1196,21 @@ fun DesktopAppPreview() {
         copyIosAppDirectory(workingDir, moduleDir.name) // iOS app is still at root level
 
         // Link iOS project for IDE
-        try {
-            debugln { "Preparing iOS target..." }
-            val process = ProcessBuilder(gradleScript, "compileIosMainKotlinMetadata", "--quiet")
-                .directory(File(workingDir))
-                .inheritIO()
-                .start()
-            val exitCode = process.waitFor()
-            if (exitCode == 0) {
-                echo("iOS target is now ready to run from the IDE")
-            } else {
-                echo("Warning: Failed to link iOS project for IDE. You may need to run '$gradleScript compileIosMainKotlinMetadata' manually.")
-            }
-        } catch (e: Exception) {
-            echo("Warning: Failed to link iOS project for IDE: ${e.message}")
-        }
+//        try {
+//            debugln { "Preparing iOS target..." }
+//            val process = ProcessBuilder(gradleScript, "compileIosMainKotlinMetadata", "--quiet")
+//                .directory(File(workingDir))
+//                .inheritIO()
+//                .start()
+//            val exitCode = process.waitFor()
+//            if (exitCode == 0) {
+//                echo("iOS target is now ready to run from the IDE")
+//            } else {
+//                echo("Warning: Failed to link iOS project for IDE. You may need to run '$gradleScript compileIosMainKotlinMetadata' manually.")
+//            }
+//        } catch (e: Exception) {
+//            echo("Warning: Failed to link iOS project for IDE: ${e.message}")
+//        }
     }
 
     private fun createIosSourceSet(moduleDir: File, namespace: String) {

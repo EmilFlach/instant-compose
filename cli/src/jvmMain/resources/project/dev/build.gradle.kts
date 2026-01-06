@@ -1,4 +1,4 @@
-package project.server.src.mainplugins {
+package project.dev.src.mainplugins {
     kotlin("jvm")
     application
 }
@@ -14,7 +14,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("org.example.web_previews.server.MainKt")
+    mainClass.set("org.example.web_previews.dev.MainKt")
     applicationDefaultJvmArgs = listOf(
         "-Dlogback.configurationFile=logback.xml",
         "--add-opens=java.base/java.lang=ALL-UNNAMED",

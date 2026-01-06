@@ -1,4 +1,4 @@
-package org.example.web_previews.server
+package org.example.web_previews.dev
 
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
