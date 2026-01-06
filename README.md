@@ -2,13 +2,10 @@
 
 Set up new Compose Multiplatform apps with a single command.
 
-![Demo](https://github.com/user-attachments/assets/c60cfcf9-1fec-4364-953f-1a8a2ce3d9c6)
-
-
 ## Installation
 
 ```shell
-curl -fsSL https://composables.com/get-composables.sh | bash
+curl -fsSL https://raw.githubusercontent.com/EmilFlach/composables-cli/refs/heads/main/get-composables.sh | bash
 ```
 
 > [!WARNING]
