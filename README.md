@@ -1,26 +1,44 @@
-# Composables CLI
+# Instant Compose
 
-Set up new Compose Multiplatform apps with a single command.
+Build your Compose app in under a minute using your favorite editor.
 
-## Installation
+<video src="docs/instant-cmp.mp4" width="100%" controls autoplay muted loop playsinline></video>
 
-1. Ensure you have curl installed.
-``` shell
-apt-get update && apt-get install curl
-```
-2. Install the CLI tool.
+## Get Started
+
+### 1. Install the CLI
+
 ```shell
 curl -fsSL https://raw.githubusercontent.com/EmilFlach/composables-cli/refs/heads/main/get-composables.sh | bash
 ```
-3. Restart or refresh your shell terminal.
+
+### 2. Create your app
+
+```shell
+composables init myApp
+cd myApp
+./gradlew :dev:run
+```
+
+<details>
+<summary>Troubleshooting</summary>
+
+#### A. Missing `curl`?
+
+```shell
+apt-get update && apt-get install curl
+```
+
+#### B. Refresh Terminal
+
 ```shell
 source ~/.bashrc
 ```
-
-## Quick Usage
-
+or
 ```shell
-composables init testApp
-cd testApp
-./gradlew :dev:run
+source ~/.zshrc
 ```
+</details>
+
+---
+Built on top of [composables-cli](https://github.com/composablehorizons/composables-cli) by Alex Styl

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Composables CLI - Build Compose Multiplatform apps faster</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --kotlin-purple: #7F52FF;
+            --kotlin-orange: #E44857;
+            --kotlin-blue: #00AFFF;
+            --kotlin-gradient: linear-gradient(135deg, #7F52FF 0%, #C711E1 50%, #E44857 100%);
+            --bg-color: #0B0E14;
+            --text-color: #FFFFFF;
+            --text-muted: #9CA3AF;
+            --card-bg: #1C1F26;
+            --code-bg: #2D3139;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 80px 0 60px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: var(--kotlin-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin: 60px 0 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .video-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: var(--card-bg);
+            border-radius: 16px;
+            margin: 40px 0;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        .step {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .step:hover {
+            transform: translateY(-2px);
+            border-color: rgba(127, 82, 255, 0.3);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .step-number {
+            background: var(--kotlin-gradient);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 0.9rem;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 8px;
+            position: relative;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            color: #E2E8F0;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 100px;
+            padding-bottom: 40px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: var(--kotlin-purple);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer a:hover {
+            color: var(--kotlin-orange);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin: 10px;
+        }
+
+        .btn-primary {
+            background: var(--kotlin-gradient);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .details-muted {
+            margin-top: 30px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .details-muted summary {
+            cursor: pointer;
+            user-select: none;
+            padding: 10px 0;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            font-weight: 500;
+        }
+
+        .details-muted summary:hover {
+            opacity: 1;
+        }
+
+        .details-muted .step {
+            background: rgba(255, 255, 255, 0.02);
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .details-muted .step-number {
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .subtitle { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero-bg"></div>
+    <div class="container">
+        <header>
+            <h1>Instant Compose</h1>
+            <p class="subtitle">Start building your Compose app in under a minute using any editor.</p>
+            <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                <a href="#installation" class="btn btn-primary">Get Started</a>
+                <a href="https://www.jetbrains.com/compose-multiplatform/" target="_blank" class="btn btn-secondary">Learn about Compose</a>
+                <a href="https://github.com/EmilFlach/composables-cli" target="_blank" class="btn btn-secondary">GitHub</a>
+            </div>
+        </header>
+
+        <div class="video-container">
+            <video autoplay muted loop playsinline poster="https://www.jetbrains.com/_assets/www/compose-multiplatform/images/img-header-desktop.6263d5eba2e6e31f2aae.png">
+                <source src="instant-cmp.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <section id="installation" class="section">
+            <h2>Get Started</h2>
+            
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <span class="step-title">Install the CLI</span>
+                </div>
+                <div class="code-block">
+                    <pre id="code-2">curl -fsSL https://raw.githubusercontent.com/EmilFlach/composables-cli/refs/heads/main/get-composables.sh | bash</pre>
+                    <button class="copy-btn" onclick="copyToClipboard('code-2')">Copy</button>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <span class="step-title">Create your app</span>
+                </div>
+                <div class="code-block">
+                    <pre id="code-usage">composables init myApp
+cd myApp
+./gradlew :dev:run</pre>
+                    <button class="copy-btn" onclick="copyToClipboard('code-usage')">Copy</button>
+                </div>
+            </div>
+
+            <details class="details-muted">
+                <summary>Troubleshooting</summary>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">A</span>
+                        <span class="step-title">Missing <code>curl</code>?</span>
+                    </div>
+                    <div class="code-block">
+                        <pre id="code-1">apt-get update && apt-get install curl</pre>
+                        <button class="copy-btn" onclick="copyToClipboard('code-1')">Copy</button>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">B</span>
+                        <span class="step-title">Refresh Terminal</span>
+                    </div>
+                    <div class="code-block">
+                        <pre id="code-3">source ~/.bashrc</pre>
+                        or
+                        <pre id="code-4">source ~/.zshrc</pre>
+                        <button class="copy-btn" onclick="copyToClipboard('code-3')">Copy</button>
+                    </div>
+                </div>
+            </details>
+        </section>
+
+        <footer class="footer">
+            <p>Built on top of <a href="https://github.com/composablehorizons/composables-cli" target="_blank">composables-cli</a> by Alex Styl</p>
+        </footer>
+    </div>
+
+    <script>
+        function copyToClipboard(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector(`[onclick="copyToClipboard('${id}')"]`);
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
