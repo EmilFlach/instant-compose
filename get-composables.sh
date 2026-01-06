@@ -53,8 +53,8 @@ setup_java() {
         brew install openjdk@17
 
         echo "Linking OpenJDK..."
-        sudo ln -sfn /usr/local/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk 2>/dev/null || \
-        sudo ln -sfn /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
+        ln -sfn /usr/local/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk 2>/dev/null || \
+        ln -sfn /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk
 
         # Add to current path for verification
         export PATH="/usr/local/opt/openjdk@17/bin:$PATH"
@@ -62,13 +62,13 @@ setup_java() {
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         if command -v apt-get &> /dev/null; then
             echo "Installing OpenJDK 17 via apt..."
-            sudo apt-get update && sudo apt-get install -y openjdk-17-jdk
+            apt-get update && apt-get install -y openjdk-17-jdk
         elif command -v dnf &> /dev/null; then
             echo "Installing OpenJDK 17 via dnf..."
-            sudo dnf install -y java-17-openjdk-devel
+            dnf install -y java-17-openjdk-devel
         elif command -v yum &> /dev/null; then
             echo "Installing OpenJDK 17 via yum..."
-            sudo yum install -y java-17-openjdk-devel
+            yum install -y java-17-openjdk-devel
         else
             echo -e "${RED}Error: Unsupported package manager.${NC}"
             echo "Please install Java 17 or higher manually."
