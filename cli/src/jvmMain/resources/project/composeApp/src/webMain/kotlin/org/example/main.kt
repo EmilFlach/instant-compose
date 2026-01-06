@@ -3,9 +3,12 @@ package {{namespace}}
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
 
+fun notifyParent(): Unit = js("window.parent.postMessage('compose-ready', '*')")
+
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    ComposeViewport {
+    ComposeViewport("compose-receiver") {
         App()
     }
+    notifyParent()
 }
