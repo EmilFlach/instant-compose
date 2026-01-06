@@ -9,7 +9,7 @@ Start building your Compose app within a minute using any editor.
 ### 1. Install the CLI
 
 ```shell
-curl -fsSL https://raw.githubusercontent.com/EmilFlach/instant-compose/refs/heads/main/get-instant-compose.sh | bash
+curl -fsSL https://emilflach.github.io/instant-compose/get.sh | bash
 ```
 
 ### 2. Create your app
