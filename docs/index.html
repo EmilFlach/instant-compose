@@ -78,10 +78,17 @@
             aspect-ratio: 16 / 9;
             background: var(--card-bg);
             border-radius: 16px;
-            margin: 40px 0;
+            margin: 40px 0 10px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .video-note {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 40px;
         }
 
         .video-container video {
@@ -275,6 +282,7 @@
                 Your browser does not support the video tag.
             </video>
         </div>
+        <p class="video-note">Parts of the video are sped up. Real time to first build was about 40 seconds.</p>
 
         <section id="installation" class="section">
             <h2>Get Started</h2>
@@ -296,10 +304,20 @@
                     <span class="step-title">Create your app</span>
                 </div>
                 <div class="code-block">
-                    <pre id="code-usage">instant-compose init myApp
-cd myApp
-./gradlew :dev:run</pre>
+                    <pre id="code-usage">instant-compose init myApp</pre>
                     <button class="copy-btn" onclick="copyToClipboard('code-usage')">Copy</button>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <span class="step-title">Run your app</span>
+                </div>
+                <div class="code-block">
+                    <pre id="code-run">cd myApp
+./gradlew :dev:run</pre>
+                    <button class="copy-btn" onclick="copyToClipboard('code-run')">Copy</button>
                 </div>
             </div>
 
