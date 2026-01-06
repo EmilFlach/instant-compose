@@ -32,17 +32,13 @@ fun App() {
                     verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
                 ) {
                     Text(
-                        text = "Hello Beautiful World!",
+                        text = "Hello World!",
                         style = MaterialTheme.typography.displayLarge,
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = "Go to App.kt to edit your app",
+                        text = "Edit App.kt to see live updates.",
                         style = MaterialTheme.typography.displayMedium,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = "Pro tip: Use the `dev` configuration in your IDE to auto-reload your app when you edit your code",
                         textAlign = TextAlign.Center
                     )
                 }
