@@ -1,6 +1,6 @@
 # Instant Compose
 
-Start building your Compose app in under a minute using any editor.
+Start building your Compose app within a minute using any editor.
 
 <video src="docs/instant-cmp.mp4" width="100%" controls autoplay muted loop playsinline></video>
 
