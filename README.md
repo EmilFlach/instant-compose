@@ -20,7 +20,7 @@ source ~/.bashrc
 ## Quick Usage
 
 ```shell
-composables init composeApp
-cd composeApp
+composables init testApp
+cd testApp
 ./gradlew :dev:run
 ```
