@@ -1,8 +1,6 @@
 # Instant Compose
 
-Start building your Compose app within a minute using any editor.
-
-<video src="docs/instant-cmp.mp4" width="100%" controls autoplay muted loop playsinline></video>
+Start building your Compose app within a minute using any editor. See it in action: https://emilflach.github.io/instant-compose
 
 ## Get Started
 
