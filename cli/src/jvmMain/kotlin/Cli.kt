@@ -167,10 +167,14 @@ class Init : CliktCommand("init") {
                         return
                     }
 
-                    val moduleName = readUniqueModuleName(target)
-                    val appName = readAppName()
-                    val namespace = readNamespace()
-                    val targets = readTargets()
+                    val moduleName = "composeApp"
+                    val appName = if (projectName == ".") {
+                        File(workingDir).name
+                    } else {
+                        File(projectName).name
+                    }
+                    val namespace = "com.example.app"
+                    val targets = setOf(ANDROID, JVM, IOS, WEB)
 
                     // Create only the module directory and files
                     createModuleOnly(
@@ -204,10 +208,14 @@ class Init : CliktCommand("init") {
             }
         }
 
-        val moduleName = readModuleName(projectName)
-        val appName = readAppName()
-        val namespace = readNamespace()
-        val targets = readTargets()
+        val moduleName = "composeApp"
+        val appName = if (projectName == ".") {
+            File(workingDir).name
+        } else {
+            File(projectName).name
+        }
+        val namespace = "com.example.app"
+        val targets = setOf(ANDROID, JVM, IOS, WEB)
 
         if (!target.mkdirs()) {
             echo("Failed to create directory $projectName")
@@ -224,170 +232,6 @@ class Init : CliktCommand("init") {
         )
     }
 
-    private fun readNamespace(): String {
-        while (true) {
-            echo("Enter package name (default: com.example.app): ", trailingNewline = false)
-            val namespace = readln().trim()
-            if (namespace.isEmpty()) {
-                return "com.example.app"
-            }
-
-            if (!isValidPackageName(namespace)) {
-                echo("Invalid package name. Must be a valid Java package name (e.g., com.example.app)")
-                continue
-            }
-
-            return namespace
-        }
-    }
-
-    private fun readAppName(): String {
-        while (true) {
-            echo("Enter app name (default: My App): ", trailingNewline = false)
-            val appName = readln().trim()
-
-            if (appName.isEmpty()) {
-                return "My App"
-            }
-
-            if (!isValidAppName(appName)) {
-                echo("Invalid app name. Must start with a letter and contain only letters, digits, or underscores")
-                continue
-            }
-
-            return appName
-        }
-    }
-
-    private fun readTargets(): Set<String> {
-        while (true) {
-            val targets = mutableSetOf<String>()
-
-            echo("Which platforms would you like your app to run on?")
-
-            while (true) {
-                echo("Android (y/n, default: y): ", trailingNewline = false)
-                val android = readln().trim().lowercase()
-                if (android.isEmpty() || android == "y" || android == "yes") {
-                    targets.add(ANDROID)
-                }
-                break
-            }
-
-            while (true) {
-                echo("JVM (Desktop) (y/n, default: y): ", trailingNewline = false)
-                val jvm = readln().trim().lowercase()
-                if (jvm.isEmpty() || jvm == "y" || jvm == "yes") {
-                    targets.add(JVM)
-                }
-                break
-            }
-
-            while (true) {
-                echo("iOS (y/n, default: y): ", trailingNewline = false)
-                val ios = readln().trim().lowercase()
-                if (ios.isEmpty() || ios == "y" || ios == "yes") {
-                    targets.add(IOS)
-                }
-                break
-            }
-
-            while (true) {
-                echo("Web (y/n, default: y): ", trailingNewline = false)
-                val web = readln().trim().lowercase()
-                if (web.isEmpty() || web == "y" || web == "yes") {
-                    targets.add(WEB)
-                }
-                break
-            }
-
-            if (targets.isNotEmpty()) {
-                return targets
-            } else {
-                echo("At least one platform is required...")
-            }
-        }
-    }
-
-    private fun isValidAppName(appName: String): Boolean {
-        if (appName.isEmpty()) return false
-
-        // Check if it contains at least one letter or digit
-        return appName.any { char -> char.isLetterOrDigit() }
-    }
-
-    private fun readModuleName(projectName: String): String {
-        while (true) {
-            echo("Enter module name (default: composeApp): ", trailingNewline = false)
-            val moduleName = readln().trim()
-
-            if (moduleName.isEmpty()) {
-                return "composeApp"
-            }
-
-            if (moduleName == projectName) {
-                echo("Module name cannot be the same as the project name \"$projectName\". Try specifying a different name.")
-                continue
-            }
-
-            if (!isValidModuleName(moduleName)) {
-                echo("Invalid module name. Must start with a letter and contain only letters, digits, hyphens, or underscores")
-                continue
-            }
-
-            return moduleName
-        }
-    }
-
-    private fun readUniqueModuleName(targetDir: File): String {
-        while (true) {
-            echo("Enter module name (default: composeApp): ", trailingNewline = false)
-            val moduleName = readln().trim()
-
-            if (moduleName.isEmpty()) {
-                if (File(targetDir, "composeApp").exists()) {
-                    echo("Module name 'composeApp' already exists. Please choose a different name.")
-                    continue
-                }
-                return "composeApp"
-            }
-
-            if (!isValidModuleName(moduleName)) {
-                echo("Invalid module name. Must start with a letter and contain only letters, digits, hyphens, or underscores")
-                continue
-            }
-
-            val moduleDir = File(targetDir, moduleName)
-            if (moduleDir.exists()) {
-                echo("Module '$moduleName' already exists. Please choose a different name.")
-                continue
-            }
-
-            return moduleName
-        }
-    }
-
-    private fun isValidModuleName(moduleName: String): Boolean {
-        if (moduleName.isEmpty()) return false
-
-        // Check if it contains at least one letter or digit
-        return moduleName.any { char -> char.isLetterOrDigit() } &&
-                moduleName.all { char -> char.isLetterOrDigit() || char == '-' || char == '_' }
-    }
-
-    private fun isValidPackageName(packageName: String): Boolean {
-        if (packageName.isEmpty()) return false
-
-        val parts = packageName.split(".")
-        if (parts.size < 2) return false
-
-        // Check each part is a valid Java identifier
-        return parts.all { part ->
-            part.isNotEmpty() &&
-                    part[0].isLetter() &&
-                    part.all { char -> char.isLetterOrDigit() || char == '_' }
-        }
-    }
 }
 
 private fun toCamelCase(input: String): String {
