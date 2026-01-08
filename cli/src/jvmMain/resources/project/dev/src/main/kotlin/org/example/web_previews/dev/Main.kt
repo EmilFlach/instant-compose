@@ -35,8 +35,8 @@ fun main() {
             val buildInProgress = AtomicBoolean(false)
             val clients = Collections.synchronizedSet(mutableSetOf<DefaultWebSocketServerSession>())
 
-            val distDir = File("composeApp/build/dist/wasmJs/developmentExecutable").let {
-                if (it.exists()) it else File("../composeApp/build/dist/wasmJs/developmentExecutable")
+            val distDir = File("composeApp/build/dist/js/developmentExecutable").let {
+                if (it.exists()) it else File("../composeApp/build/dist/js/developmentExecutable")
             }.canonicalFile
 
             if (!distDir.exists()) {
@@ -166,7 +166,7 @@ suspend fun performRebuild(
             val gradlewPath = if (File("./gradlew").exists()) "./gradlew" else "../gradlew"
             val processBuilder = ProcessBuilder(
                 gradlewPath,
-                ":composeApp:wasmJsBrowserDevelopmentExecutableDistribution",
+                ":composeApp:jsBrowserDevelopmentExecutableDistribution",
                 "--quiet",
                 "--console=rich",
                 "-Dorg.gradle.color=true",

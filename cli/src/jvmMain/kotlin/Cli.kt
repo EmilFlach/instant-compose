@@ -1172,16 +1172,11 @@ fun IosAppPreview() {
                 "",
                 "    js {",
                 "        browser {",
-                "            val rootDirPath = project.rootDir.path",
-                "            val projectDirPath = project.projectDir.path",
+                "            runTask {",
+                "                sourceMaps = false",
+                "            }",
                 "            commonWebpackConfig {",
-                "                outputFileName = \"composeApp.js\"",
-                "                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {",
-                "                    static = (static ?: mutableListOf()).apply {",
-                "                        add(rootDirPath)",
-                "                        add(projectDirPath)",
-                "                    }",
-                "                }",
+                "                devtool = null",
                 "            }",
                 "        }",
                 "        binaries.executable()",
@@ -1785,16 +1780,11 @@ android.useAndroidX=true
                     kotlinTargets.add(
                         """    js {
         browser {
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
+            runTask {
+                sourceMaps = false
+            }
             commonWebpackConfig {
-                outputFileName = "composeApp.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
-                }
+                devtool = null
             }
         }
         binaries.executable()
