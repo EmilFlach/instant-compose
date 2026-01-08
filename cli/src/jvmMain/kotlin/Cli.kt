@@ -10,9 +10,22 @@ import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.versionOption
+import com.github.ajalt.mordant.rendering.TextColors.*
+import com.github.ajalt.mordant.rendering.TextStyles.*
+import com.github.ajalt.mordant.terminal.Terminal
 import java.io.File
 import java.io.InputStream
 import java.util.jar.JarFile
+
+private val terminal = Terminal()
+
+private fun echo(message: Any?, err: Boolean = false, trailingNewline: Boolean = true) {
+    if (trailingNewline) {
+        terminal.println(message, stderr = err)
+    } else {
+        terminal.print(message, stderr = err)
+    }
+}
 
 val ANDROID = "android"
 val JVM = "jvm"
@@ -38,20 +51,18 @@ class ComposablesCli : CliktCommand(name = "instant-compose") {
     }
 
     override fun help(context: Context) = """
-        If you have any problems or need help, do not hesitate to ask for help at:
-            https://github.com/EmilFlach/instant-compose
+        ${bold("If you have any problems or need help, do not hesitate to ask for help at:")}
+            ${cyan("https://github.com/EmilFlach/instant-compose")}
     """.trimIndent()
 }
 
 class Update : CliktCommand("update") {
 
-    override fun help(context: Context): String = """
-        Updates the CLI tool with the latest version
-    """.trimIndent()
+    override fun help(context: Context): String = bold("Updates the CLI tool with the latest version")
 
     override fun run() {
         try {
-            echo("Updating Instant Compose...")
+            echo(bold("Updating Instant Compose..."))
 
             // Get current JAR path
             val currentJarPath = this::class.java.protectionDomain.codeSource.location.path
@@ -73,11 +84,11 @@ class Update : CliktCommand("update") {
                 .trim()
 
             if (latestVersion.isEmpty()) {
-                echo("Failed to fetch latest version", err = true)
+                echo(red("Failed to fetch latest version"), err = true)
                 return
             }
 
-            echo("Latest version: $latestVersion")
+            echo("Latest version: " + cyan(latestVersion))
             echo("Downloading...")
 
             val downloadProcess = ProcessBuilder(
@@ -88,42 +99,40 @@ class Update : CliktCommand("update") {
 
             val downloadExitCode = downloadProcess.waitFor()
             if (downloadExitCode != 0) {
-                echo("Failed to download new version", err = true)
+                echo(red("Failed to download new version"), err = true)
                 tempJar.delete()
                 return
             }
 
-            echo("✓ Downloaded new version")
+            echo(green("✓ Downloaded new version"))
 
             // Replace the JAR file
             val currentJar = File(currentJarPath)
             if (currentJar.exists()) {
                 if (!currentJar.delete()) {
-                    echo("Failed to remove old JAR file", err = true)
+                    echo(red("Failed to remove old JAR file"), err = true)
                     tempJar.delete()
                     return
                 }
             }
 
             if (!tempJar.renameTo(currentJar)) {
-                echo("Failed to install new JAR file", err = true)
+                echo(red("Failed to install new JAR file"), err = true)
                 tempJar.delete()
                 return
             }
 
-            echo("✓ Update completed successfully!")
-            echo("Note: Restart your terminal to use the new version")
+            echo(green("✓ Update completed successfully!"))
+            echo(yellow("Note: Restart your terminal to use the new version"))
 
         } catch (e: Exception) {
-            echo("Failed to run update: ${e.message}", err = true)
+            echo(red("Failed to run update: ${e.message}"), err = true)
         }
     }
 }
 
 class Init : CliktCommand("init") {
-    override fun help(context: Context): String = """
-        Initializes a new Compose Multiplatform module to the specified <directory> path.
-    """.trimIndent()
+    override fun help(context: Context): String = bold("Initializes a new Compose Multiplatform module to the specified <directory> path.")
 
     private val directory by argument("directory", help = "The directory path to create the new module in").optional()
 
@@ -131,11 +140,11 @@ class Init : CliktCommand("init") {
         val workingDir = System.getProperty("user.dir")
         val projectName = directory.orEmpty()
         if (projectName.isBlank()) {
-            debugln { "Please specify the project directory:" }
-            infoln { "instant-compose init <project-directory>" }
-            debugln { "" }
-            debugln { "For example:" }
-            infoln { "instant-compose init app" }
+            echo(yellow("Please specify the project directory:"))
+            echo(cyan("instant-compose init <project-directory>"))
+            echo("")
+            echo(yellow("For example:"))
+            echo(cyan("instant-compose init app"))
             return
         }
         val target = if (projectName == ".") File(workingDir) else File(workingDir).resolve(projectName)
@@ -152,18 +161,13 @@ class Init : CliktCommand("init") {
                         File(target, "settings.gradle").exists()
 
                 if (isGradleProject) {
-                    echo("Gradle project detected. This will add a new module to your existing project. Is this what you want? y/n ", trailingNewline = false)
-                    val response = readln().trim().lowercase()
-                    if (response != "y" && response != "yes") {
-                        echo("Operation cancelled.")
-                        return
-                    }
+                    echo(bold("Gradle project detected. This will add a new module to your existing project."))
 
                     // Check Kotlin version
                     val kotlinVersion = getKotlinVersion(target)
                     if (kotlinVersion != null && !isKotlinVersionSupported(kotlinVersion)) {
-                        echo("Kotlin version $kotlinVersion is not supported. At least version 2.2.21 is required.")
-                        echo("Please update your Kotlin version and try again.")
+                        echo(red("Kotlin version $kotlinVersion is not supported. At least version 2.2.21 is required."))
+                        echo(red("Please update your Kotlin version and try again."))
                         return
                     }
 
@@ -198,11 +202,18 @@ class Init : CliktCommand("init") {
                     if (targets.contains("ios")) {
                         createIosAppDirectory(target.absolutePath, moduleName)
                     }
+
+                    echo(green("Success! A new Compose Multiplatform module has been added to ${target.absolutePath}"))
+                    echo(yellow("Start by typing:"))
+                    echo("")
+                    echo(cyan("$gradleScript :$moduleName:run"))
+                    echo("")
+                    echo(green("Happy coding!"))
                     return
                 } else {
                     val dirName = if (projectName == ".") "The current directory" else "The directory $projectName"
-                    echo("$dirName is not empty and does not contain a Gradle project.")
-                    echo("Try a new directory path or delete the existing one before trying to initialize a new module.")
+                    echo(red("$dirName is not empty and does not contain a Gradle project."))
+                    echo(red("Try a new directory path or delete the existing one before trying to initialize a new module."))
                     return
                 }
             }
@@ -218,7 +229,7 @@ class Init : CliktCommand("init") {
         val targets = setOf(ANDROID, JVM, IOS, WEB)
 
         if (!target.mkdirs()) {
-            echo("Failed to create directory $projectName")
+            echo(red("Failed to create directory $projectName"))
             return
         }
 
@@ -247,9 +258,7 @@ private fun toCamelCase(input: String): String {
 }
 
 class Target : CliktCommand("target") {
-    override fun help(context: Context): String = """
-        Adds a new Kotlin target to the current Compose Multiplatform project (options: android, jvm, ios, web).
-    """.trimIndent()
+    override fun help(context: Context): String = bold("Adds a new Kotlin target to the current Compose Multiplatform project (options: android, jvm, ios, web).")
 
     private val targetName by argument(name = "target")
 
@@ -257,81 +266,81 @@ class Target : CliktCommand("target") {
         val validTargets = setOf("android", "jvm", "ios", "web")
 
         if (targetName !in validTargets) {
-            echo("Unknown target '$targetName'")
-            echo("Available targets: android, jvm, ios, web")
-            echo("Usage: instant-compose target <target-name>")
+            echo(red("Unknown target '$targetName'"))
+            echo(yellow("Available targets: android, jvm, ios, web"))
+            echo(cyan("Usage: instant-compose target <target-name>"))
             return
         }
 
         val workingDir = System.getProperty("user.dir")
 
         if (!isValidComposeAppDirectory(workingDir)) {
-            echo("This doesn't appear to be a Compose Multiplatform project.")
-            echo("To create a new Compose app, run:")
-            echo("    instant-compose init app")
+            echo(red("This doesn't appear to be a Compose Multiplatform project."))
+            echo(yellow("To create a new Compose app, run:"))
+            echo(cyan("    instant-compose init app"))
             return
         }
 
         val composeModuleBuildFile = findComposeModuleBuildFile(workingDir)
         if (composeModuleBuildFile == null) {
-            echo("Could not find a Compose Multiplatform module in this project.")
+            echo(red("Could not find a Compose Multiplatform module in this project."))
             return
         }
 
         when (targetName) {
             "android" -> {
                 if (hasAndroidTarget(composeModuleBuildFile)) {
-                    echo("Android target is already configured in this project.")
+                    echo(yellow("Android target is already configured in this project."))
                     return
                 }
                 try {
                     addAndroidTarget(workingDir, composeModuleBuildFile)
-                    echo("Android target added successfully!")
-                    echo("Run '$gradleScript build' to verify the configuration.")
+                    echo(green("Android target added successfully!"))
+                    echo(yellow("Run '$gradleScript build' to verify the configuration."))
                 } catch (e: Exception) {
-                    echo("Failed to add Android target: ${e.message}", err = true)
+                    echo(red("Failed to add Android target: ${e.message}"), err = true)
                 }
             }
 
             "jvm" -> {
                 if (hasJvmTarget(composeModuleBuildFile)) {
-                    echo("JVM target is already configured in this project.")
+                    echo(yellow("JVM target is already configured in this project."))
                     return
                 }
                 try {
                     addJvmTarget(workingDir, composeModuleBuildFile)
-                    echo("JVM target added successfully!")
-                    echo("Run '$gradleScript build' to verify the configuration.")
+                    echo(green("JVM target added successfully!"))
+                    echo(yellow("Run '$gradleScript build' to verify the configuration."))
                 } catch (e: Exception) {
-                    echo("Failed to add JVM target: ${e.message}", err = true)
+                    echo(red("Failed to add JVM target: ${e.message}"), err = true)
                 }
             }
 
             "ios" -> {
                 if (hasIosTarget(composeModuleBuildFile)) {
-                    echo("iOS target is already configured in this project.")
+                    echo(yellow("iOS target is already configured in this project."))
                     return
                 }
                 try {
                     addIosTarget(workingDir, composeModuleBuildFile)
-                    echo("iOS target added successfully!")
-                    echo("Run '$gradleScript build' to verify the configuration.")
+                    echo(green("iOS target added successfully!"))
+                    echo(yellow("Run '$gradleScript build' to verify the configuration."))
                 } catch (e: Exception) {
-                    echo("Failed to add iOS target: ${e.message}", err = true)
+                    echo(red("Failed to add iOS target: ${e.message}"), err = true)
                 }
             }
 
             "web" -> {
                 if (hasWebTarget(composeModuleBuildFile)) {
-                    echo("Web target is already configured in this project.")
+                    echo(yellow("Web target is already configured in this project."))
                     return
                 }
                 try {
                     addWebTarget(workingDir, composeModuleBuildFile)
-                    echo("Web target added successfully!")
-                    echo("Run '$gradleScript build' to verify the configuration.")
+                    echo(green("Web target added successfully!"))
+                    echo(yellow("Run '$gradleScript build' to verify the configuration."))
                 } catch (e: Exception) {
-                    echo("Failed to add web target: ${e.message}", err = true)
+                    echo(red("Failed to add web target: ${e.message}"), err = true)
                 }
             }
         }
@@ -395,22 +404,22 @@ class Target : CliktCommand("target") {
 
     private fun selectComposeModule(composeModules: List<File>): File? {
         val sortedModules = composeModules.sortedBy { it.name }
-        echo("Multiple Compose modules detected:")
+        echo(yellow("Multiple Compose modules detected:"))
         sortedModules.forEachIndexed { index, module ->
-            echo("  ${index + 1}. ${module.name}")
+            echo(cyan("  ${index + 1}. ${module.name}"))
         }
 
         while (true) {
-            echo("Select a module (1-${sortedModules.size}): ", trailingNewline = false)
+            echo(yellow("Select a module (1-${sortedModules.size}): "), trailingNewline = false)
             val input = readln().trim()
 
             val selection = input.toIntOrNull()
             if (selection != null && selection in 1..sortedModules.size) {
                 val selectedModule = sortedModules[selection - 1]
-                echo("Selected module: ${selectedModule.name}")
+                echo(green("Selected module: ${selectedModule.name}"))
                 return File(selectedModule, "build.gradle.kts")
             } else {
-                echo("Invalid selection. Please enter a number between 1 and ${sortedModules.size}")
+                echo(red("Invalid selection. Please enter a number between 1 and ${sortedModules.size}"))
             }
         }
     }
@@ -1535,22 +1544,15 @@ fun cloneGradleProjectAndPrint(
         targets,
         moduleName
     )
-    // Log project configuration summary
-    infoln { "" }
-    infoln { "Project Configuration:" }
-    infoln { "\tApp Name: $appName" }
-    infoln { "\tPackage: $packageName" }
-    infoln { "\tCompose Module: $moduleName" }
-    infoln { "\tTargets: ${targets.joinToString(", ")}" }
-    infoln { "" }
 
-    debugln { "Success! Your new Compose app is ready at ${File(targetDir).resolve(dirName).absolutePath}" }
-    debugln { "Start by typing:" }
-    infoln { "" }
-    infoln { "\tcd $dirName" }
-    infoln { "\t$gradleScript :dev:run" }
-    infoln { "" }
-    debugln { "Happy coding!" }
+    val targetFile = File(targetDir).resolve(dirName)
+    echo(green("Success! Your new Compose app is ready at ${targetFile.absolutePath}"))
+    echo(yellow("Start by typing:"))
+    echo("")
+    echo(cyan("cd $dirName"))
+    echo(cyan("$gradleScript :dev:run"))
+    echo("")
+    echo(green("Happy coding!"))
 }
 
 
@@ -2560,15 +2562,15 @@ fun createModuleOnly(
     }
 
     // Log module creation summary
-    infoln { "" }
-    infoln { "Module Configuration:" }
-    infoln { "\tApp Name: $appName" }
-    infoln { "\tPackage: $packageName" }
-    infoln { "\tModule: $moduleName" }
-    infoln { "\tTargets: ${targets.joinToString(", ")}" }
-    infoln { "" }
+    echo("")
+    echo(bold("Module Configuration:"))
+    echo(cyan("  App Name: $appName"))
+    echo(cyan("  Package: $packageName"))
+    echo(cyan("  Module: $moduleName"))
+    echo(cyan("  Targets: ${targets.joinToString(", ")}"))
+    echo("")
 
-    debugln { "Success! Your new Compose Multiplatform module is ready at ${moduleDir.absolutePath}" }
+    echo(green("Success! Your new Compose Multiplatform module is ready at ${moduleDir.absolutePath}"))
 }
 
 private fun createIosAppDirectory(
