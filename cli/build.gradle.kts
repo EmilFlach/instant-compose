@@ -49,6 +49,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("com.alexstyl:debugln:1.0.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
                 implementation("com.github.ajalt.clikt:clikt:5.0.3") {
                     exclude(group = "com.github.ajalt.mordant", module = "mordant-jvm-jna")
                 }

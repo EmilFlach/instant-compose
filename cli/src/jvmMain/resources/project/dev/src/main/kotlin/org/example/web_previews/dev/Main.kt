@@ -20,9 +20,6 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 
 fun main() {
-    println("=".repeat(50))
-    println("Starting development server...")
-
     var currentPort = 8080
     var serverStarted = false
 
@@ -46,22 +43,27 @@ fun main() {
             runBlocking {
                 performRebuild(distDir, clients, buildInProgress, isInitial = true)
             }
+            
+            // Re-clear screen after initial build to remove any lingering Gradle artifacts
+            System.`out`.print("\u001b[H\u001b[2J\u001b[3J")
+            System.`out`.flush()
+            
+            System.`out`.println("=".repeat(50))
+            System.`out`.println("")
+            System.`out`.println("${"\u001B[1m"}${"\u001B[36m"}Instant Compose${"\u001B[0m"} ${"\u001B[1m"}${"\u001B[34m"} dev${"\u001B[0m"}")
+            System.`out`.println("Running development server")
+            System.`out`.println("")
+            System.`out`.println("=".repeat(50))
 
-            // Clear the terminal screen to remove Gradle startup noise (if supported by terminal)
-            // \u001b[H moves cursor to home, \u001b[2J clears the screen
-            print("\u001b[H\u001b[2J")
-            System.out.flush()
-
-            println("=".repeat(50))
             networkUrl?.let {
-                println("\nScan the QR code below to view on your phone:")
-                println(generateQrCodeAscii(it))
-                println("Link: $it")
+                System.`out`.println("Scan the QR code below to view on your phone:")
+                System.`out`.println(generateQrCodeAscii(it))
+                System.`out`.println("Link: $it")
             }
-            println("")
-            println("Use Android Studio and the KMP Plugin for faster reloads and actual native performance!")
-            println("")
-            println("=".repeat(50))
+            System.`out`.println("")
+            System.`out`.println("Use Android Studio and the KMP plugin for native performance!")
+            System.`out`.println("")
+            System.`out`.println("=".repeat(50))
 
             embeddedServer(Netty, port = currentPort) {
                 install(WebSockets)
@@ -122,7 +124,7 @@ fun main() {
             serverStarted = true
         } catch (e: Exception) {
             if (e.cause is java.net.BindException || e is java.net.BindException) {
-                println("Port $currentPort is already in use, trying next port...")
+                print("\rPort $currentPort is already in use, trying next port...\u001B[K\n")
                 currentPort++
             } else {
                 throw e
@@ -141,13 +143,13 @@ suspend fun performRebuild(
         val startTime = System.currentTimeMillis()
         var timerJob: Job?
 
-        val statusText = if (isInitial) "Building..." else "Rebuilding..."
+        val statusText = if (isInitial) "Initial build..." else "Rebuilding..."
 
         coroutineScope {
             timerJob = launch {
                 while (true) {
                     val elapsed = (System.currentTimeMillis() - startTime) / 1000.0
-                    print("\r\u001B[33m$statusText (${"%.1f".format(elapsed)}s)\u001B[0m          ")
+                    print("\r\u001B[33m$statusText (${"%.1f".format(elapsed)}s)\u001B[0m\u001B[K")
                     System.out.flush()
                     delay(100)
                 }
@@ -164,7 +166,7 @@ suspend fun performRebuild(
                 gradlewPath,
                 ":composeApp:jsBrowserDevelopmentExecutableDistribution",
                 "--quiet",
-                "--console=rich",
+                "--console=plain",
                 "-Dorg.gradle.color=true",
                 "-Pkotlin.colors.enabled=true"
             )
@@ -188,9 +190,10 @@ suspend fun performRebuild(
             buildInProgress.set(false)
 
             if (exitCode == 0) {
-                val successText = if (isInitial) "Build successful" else "Rebuild successful"
-                print("\r\u001B[32m$successText in ${"%.1f".format(duration)}s, notifying clients.\u001B[0m          ")
+                val successText = if (isInitial) "Initial build successful" else "Rebuild successful"
+                print("\r\u001B[32m$successText in ${"%.1f".format(duration)}s, notifying clients.\u001B[0m\u001B[K")
                 System.out.flush()
+                println()
 
                 // Copy resources
                 val resourcesDir = File("composeApp/src/webMain/resources")
@@ -210,8 +213,8 @@ suspend fun performRebuild(
                     }
                 }
             } else {
-                val failureText = if (isInitial) "Build failed" else "Rebuild failed"
-                println("\r\u001B[31m$failureText in ${"%.1f".format(duration)}s\u001B[0m" + " ".repeat(20))
+                val failureText = if (isInitial) "Initial build failed" else "Rebuild failed"
+                println("\r\u001B[31m$failureText in ${"%.1f".format(duration)}s\u001B[0m\u001B[K")
                 val filteredOutput = output.lines()
                     .filter { line ->
                         line.isNotBlank() &&

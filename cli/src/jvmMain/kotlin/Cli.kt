@@ -10,6 +10,7 @@ import com.github.ajalt.clikt.parameters.options.versionOption
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles.*
 import com.github.ajalt.mordant.terminal.Terminal
+import kotlinx.coroutines.*
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
@@ -28,7 +29,7 @@ private fun echo(message: Any?, err: Boolean = false, trailingNewline: Boolean =
 
 suspend fun main(args: Array<String>) {
     ComposablesCli()
-        .subcommands(Init(), Update())
+        .subcommands(Init(), Update(), Dev())
         .main(args)
 }
 
@@ -55,7 +56,7 @@ class Update : CliktCommand("update") {
 
     override fun run() {
         try {
-            echo(bold(cyan("Instant Compose")) + " " + brightBlue("🔄 Update"))
+            echo(bold(cyan("Instant Compose")) + " " + brightBlue("update"))
             echo(white("Updating CLI tool"))
             echo("")
 
@@ -120,7 +121,7 @@ class Init : CliktCommand("init") {
             return
         }
 
-        echo(bold(cyan("Instant Compose")) + " " + brightBlue("🚀 Init"))
+        echo(bold(cyan("Instant Compose")) + " " + brightBlue("init"))
         echo(white("Initializing project: $name"))
         echo("")
 
@@ -142,7 +143,7 @@ class Init : CliktCommand("init") {
             echo("")
             echo(bold("To get started:"))
             echo(cyan("  cd $name"))
-            echo(cyan("  ./gradlew :dev:run"))
+            echo(cyan("  instant-compose dev"))
         } catch (e: Exception) {
             echo(red("Failed to initialize project: ${e.message}"), err = true)
         }
@@ -285,5 +286,84 @@ class Init : CliktCommand("init") {
         val codeSource = this::class.java.protectionDomain.codeSource
         val location = codeSource?.location?.toURI()?.path ?: return null
         return if (location.endsWith(".jar")) JarFile(location) else null
+    }
+}
+
+class Dev : CliktCommand("dev") {
+    override fun help(context: Context): String = bold("Runs the development server")
+
+    override fun run() {
+        val gradlew = if (System.getProperty("os.name").lowercase().contains("win")) "gradlew.bat" else "./gradlew"
+        
+        if (!File(gradlew).exists()) {
+            echo(red("Error: gradlew not found in current directory."))
+            return
+        }
+
+        val startTime = System.currentTimeMillis()
+        val timerJob = CoroutineScope(Dispatchers.Default).launch {
+            while (true) {
+                val elapsed = (System.currentTimeMillis() - startTime) / 1000.0
+                System.`out`.print("\r\u001B[33mStarting... (${"%.1f".format(elapsed)}s)\u001B[0m\u001B[K")
+                System.`out`.flush()
+                delay(100)
+            }
+        }
+
+        val processBuilder = ProcessBuilder(
+            gradlew,
+            ":dev:run",
+            "--quiet",
+            "--console=plain"
+        )
+
+        val process = processBuilder.start()
+
+        // Wait for the server to output its first line or for the process to exit
+        val reader = process.inputStream.bufferedReader()
+        var firstLine: String? = null
+        
+        var finalElapsed = 0.0
+        runBlocking {
+            val firstLineDeferred = async(Dispatchers.IO) {
+                try {
+                    reader.readLine()
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            
+            while (process.isAlive && !firstLineDeferred.isCompleted) {
+                delay(50)
+            }
+            
+            if (firstLineDeferred.isCompleted) {
+                firstLine = firstLineDeferred.await()
+            } else {
+                firstLineDeferred.cancel()
+            }
+            finalElapsed = (System.currentTimeMillis() - startTime) / 1000.0
+            timerJob.cancel()
+        }
+
+        // Clear the timer line and show "Started"
+        System.`out`.print("\r\u001B[32mStarted (${"%.1f".format(finalElapsed)}s)\u001B[0m\u001B[K\n")
+        System.`out`.flush()
+
+        if (firstLine != null) {
+            System.`out`.println(firstLine)
+            // Now inherit the rest of the IO
+            CoroutineScope(Dispatchers.IO).launch {
+                process.inputStream.copyTo(System.`out`)
+            }
+            CoroutineScope(Dispatchers.IO).launch {
+                process.errorStream.copyTo(System.err)
+            }
+        }
+
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            echo(red("Dev server exited with code $exitCode"))
+        }
     }
 }
