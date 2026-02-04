@@ -55,10 +55,14 @@ fun main() {
             System.`out`.println("")
             System.`out`.println("=".repeat(50))
 
-            networkUrl?.let {
+            if (networkUrl != null) {
                 System.`out`.println("Scan the QR code below to view on your phone:")
-                System.`out`.println(generateQrCodeAscii(it))
-                System.`out`.println("Link: $it")
+                System.`out`.println(generateQrCodeAscii(networkUrl))
+                System.`out`.println("Link: $networkUrl")
+            } else {
+                System.`out`.println("Link: http://localhost:$currentPort")
+                System.`out`.println("")
+                System.`out`.println("Connect to the same network as your phone to view the app there.")
             }
             System.`out`.println("")
             System.`out`.println("Use Android Studio and the KMP plugin for native performance!")
