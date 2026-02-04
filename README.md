@@ -15,7 +15,7 @@ curl -fsSL https://emilflach.github.io/instant-compose/get.sh | bash
 ```shell
 compose init myApp
 cd myApp
-./gradlew :dev:run
+compose dev
 ```
 
 <details>

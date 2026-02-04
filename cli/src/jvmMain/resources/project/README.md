@@ -4,7 +4,7 @@ This project was created with [Instant Compose](https://github.com/EmilFlach/ins
 
 Run the app
 ```shell
-./gradlew :dev:run
+compose dev
 ```
 
 ## Share your app on Github
